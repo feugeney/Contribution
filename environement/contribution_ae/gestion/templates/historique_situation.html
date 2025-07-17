@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load permission_tags %}
+{%block content%}
+{% load static %}
+{% load humanize %}
+<head>
+   <meta name="viewport" content="width=device-width, initial-scale=1.5">
+   {% block css %}
+   <link rel="stylesheet" href="{% static 'css/liste.css' %}" />
+   <link href="{% static 'font-awesome/css/font-awesome.css' %}" rel="stylesheet" />
+   <style>
+      .header {
+   display: flex;
+   justify-content: space-between;
+   align-items: stretch;
+   height: 42px;
+   position: relative;
+   z-index: 3;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   }
+       .tableFixHead {
+      overflow: auto;
+      height: 600px;
+     
+      }
+    
+      .montant{
+        text-align: right;
+      }
+   </style>
+   {% endblock %}
+</head>
+<body>
+   <div class="container">
+      <div class="row1" style="background: url('/static/images/armony_light.png') no-repeat center fixed;">
+      <center>
+         <div class="col-md-8">
+            <div class="card-ressource shadow-lg border-0 rounded-lg mt-1 w-18 p-6 ">
+         <div class="card-header">
+            <h3 class="text-center font-weight-light my-0">   HISTORIQUE  DE LA CONTRIBUTION GUINEENNE A L'ORGANISATION
+         </div>
+         <div class="card-body" >
+            
+            <div class="tableFixHead">
+               <table id="example" class="table table-striped table-bordered grid">
+                  <tbody>
+                    {%  for institution in institutions %}
+                    <tr>
+                      <th colspan="6" style="font-size: medium;"><strong>{{institution.nom}} &nbsp; {{institution.sigle}}</strong></th>
+                    </tr>
+                    <tr>
+                      <th style="width: 12px;"><strong> Exercice</strong></th>
+                       <th style="width: 12px;"><strong> Devise</strong></th>
+                      <th style="width: 150px;" > <strong>Montant dû</strong></th>
+                      <th style="width: 150px;"><strong> Payée</strong></th>
+                      <th style="width: 150px;"><strong> Reliquat</strong></th>
+                      <th><strong>Lettre</strong> </th>
+                     
+                      
+                     </tr>
+                     {%  for historique in historiques %}
+                     <tr>
+                      {% if historique.organisation.cd_organisation == institution.cd_organisation %}
+                      <td><center><strong id="exercice{{historique.exercice}}" data-id="{{historique.exercice}}">{{historique.exercice}}</strong></center></td>
+                      <td><center>{{historique.devise}}</center></td>
+                      <td class="montant"><span id="mt{{historique.exercice}}{{institution.cd_organisation}}"></span></td>
+                      <td class="montant"><strong ><span id="payer{{historique.exercice}}{{institution.cd_organisation}}"></span></strong></td>
+                      <td class="montant"><span id="reliquat{{historique.exercice}}{{institution.cd_organisation}}"></span></td>
+                      
+                      {% if historique.reference_lettre != '' %}
+                      <td><center> 
+                        <a target='_blank' href="{% url 'lire-lettre' historique.pk %}"data-toggle="tooltip" title="Mise a jour des paiement"
+                           class="btn-icones btn-primary btn-xs fa fa-book" style=" background-color: #779cb0;">Lire la lettre
+                        </a> </center> 
+                      </td>
+                      {% endif %}
+                   
+                     {% endif %}
+                  </tr>
+                  {% endfor %}
+                      
+                   </tbody>
+                   <tr style="background-color:rgb(99, 98, 153);" >
+                     <td colspan="3">Total des contributions payé à ce jour </td>
+                     <td class="montant"><strong><strong><span id="total_paye"></span></strong></td>
+                     <td class="montant"><strong><strong><span id="total_reliquat"></span></strong></td>
+                     <td></td>
+                     </tr>
+                   <tr>
+                     <td colspan="7" style="text-align: right; font-size: 20px;">
+                        <a  href="{% url 'extration-historique' institution.pk %}"class="btn-icones btn-primary btn-xs fa fa-file-excel-o">
+                           <strong>Exporter</strong>
+                          </a></h3>
+                     </td>
+                   </tr>
+               </table>
+               
+               {% endfor %}   
+              
+            </div>
+         </div>
+      </div>
+   </div>
+</center>
+</body>
+</html>
+{%endblock content%}
+{% block js %}
+<script>
+$(document).ready(function () { 
+
+   function formate(val){
+        
+        var reg = new RegExp("[,.]+", "g");
+              let somme = val ;
+              let formattedDecima = 0;
+              let formattedNum = 0;
+
+                 try{
+                    let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+                    let decimal = (somme.split(reg)[1]).replace(/\s/g,"");
+                    formattedDecima = parseFloat(decimal).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    formattedNum = parseFloat(sommes).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    }
+                    catch(error){
+                                   // let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+                       formattedNum = parseFloat(somme).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    }
+                    return formattedNum;
+   }
+
+   let institution={{institution_json|safe}};
+   let historique={{historique_json|safe}};
+   let taux={{taux_json|safe}};
+   let total_paye=0;
+   let t_gnf=0;
+   let t_reliquat=0;
+   let total=document.getElementById('total_paye')
+  // let total_gnf=document.getElementById('total_gnf')
+   let total_reliquat=document.getElementById('total_reliquat')
+  
+    console.log('ins')
+    console.log(institution)
+    console.log('his')
+    console.log(historique)
+    console.log(taux)
+   $.each(historique, function(i,obj) { 
+        $.each(institution, function(j,obj1) { let  exercice=$('#exercice'+obj.fields.exercice).data('id'); 
+         if(obj1.pk == obj.fields.organisation && exercice == obj.fields.exercice){
+            let mt=document.getElementById('mt'+obj.fields.exercice+obj1.pk)
+            mt.innerText=formate(parseInt(obj.fields.contribution)+parseInt(obj.fields.arriere)) 
+            let mt_gnf=document.getElementById('mt_gnf'+obj.fields.exercice+obj1.pk)
+          //  mt_gnf.innerText=""+formate(calcult_Taux(obj.fields.devise, mt.innerText.replace(/\s+/g, '')))
+            let payer=document.getElementById('payer'+obj.fields.exercice+obj1.pk)
+            let mt_devise=taux_devise(obj.fields.devise)  //obj.fields.paye
+            if (parseInt(obj.fields.paye) == 0){
+               payer.innerText=""+ 0 
+            } 
+            else {
+              // alert('devise  '+obj.fields.devise)///parseInt(mt_devise)
+               payer.innerText=""+parseInt(parseInt(obj.fields.paye))
+            }        
+            let reliquat=document.getElementById('reliquat'+obj.fields.exercice+obj1.pk)
+            total_paye =parseInt(total_paye) + parseInt(payer.innerText)
+            t_gnf=parseInt(t_gnf) + parseInt(mt.innerText.replace(/\s+/g, ''))
+            reliquat.innerText=formate(parseInt(mt.innerText.replace(/\s+/g, '')) - parseInt(payer.innerText))
+            //let m=reliquat.innerText.replace(/\s+/g, '')
+           // t_reliquat =parseInt(t_reliquat) + parseInt(reliquat.innerText.replace(/\s+/g, ''))
+         }
+        
+        });
+       // alert(taux_devise('CHF'))
+        total.innerText=""+formate(total_paye) 
+      //  total_gnf.innerText=""+formate(t_gnf) 
+       // total_reliquat.innerText=""+formate(t_reliquat)
+   });
+
+   function taux_devise(devise){
+      let tau=0;
+      $.each(taux, function(i,obj) { 
+        
+         if (obj.fields.devise==devise){
+            tau=parseInt(obj.fields.taux);
+         }
+      });
+     
+      return  tau;
+   } 
+   
+});
+</script>
+{% endblock %}

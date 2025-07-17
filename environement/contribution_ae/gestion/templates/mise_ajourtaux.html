@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load permission_tags %}
+{%block content%}
+{% load static %}
+<head>
+   {% block css %}
+
+   <style>
+      .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    height: 42px;
+    position: relative;
+    z-index: 3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.card-header1{
+   padding: .2rem;
+    margin-bottom: 0;
+    background-color: rgb(58, 57, 108);
+    border-bottom: 1px solid rgba(0, 0, 0, .125);
+    width: auto;
+    height: auto;
+}
+h4{
+   color: whitesmoke;
+}
+   </style>
+   {% endblock %}
+</head>
+<section id="main-content">
+  <section class="wrapper">
+<main>
+   <div class="container" style="margin-top: 2rem;">
+      <div class="row justify-content-center">
+         <div class="col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg mt-2 w-1 p-2 " >
+               <div class="card-header1">
+                  <h4 class="text-center font-weight-light my-0">MISE A JOUR D'UN TAUX</h4>
+               </div>
+               <div class="card-body">
+                <form class="form-horizontal style-form" method="post" action="{% url 'miseajour-taux' taux.pk %}">
+                  {% csrf_token %}         
+                     <div class="row mb-1">
+                        <div class="col-md-3">
+                           <div class="form-floating mb-1 mb-md-0">
+                              <strong><label for="inputFirstName">Devise</label></strong> 
+                              {{form.devise}}
+                           </div>
+                        </div>
+                        <div class="col-md-9">
+                           <div class="form-floating">
+                              <strong><label for="inputFirstName">Taux</label></strong> 
+                              {{form.taux}}
+                           </div>
+                        </div>
+                        
+                     </div>
+                     
+                          <br> 
+                          <div class="button-style" style="text-align: center;">
+                           <button type="submit"  class="btn btn-success">
+                              Enregistrer
+                              <span><i class="fa fa-remove"></i></span>
+                           </button>
+                           <a href="{% url 'menus' %}" class="btn btn-secondary">Retour</a>
+                           
+                        </div>
+                  </form>
+               </div>
+            </div>
+         </div>
+    </main>
+    </section>
+    </section>
+</div>
+</div>
+</body>
+</html>
+{%endblock content%}
+{% block js %}
+<script>
+   $(document).ready(function () { $('#example').DataTable({ scrollY: '100px', scrollCollapse: true, paging: false, }); });
+   
+   $('.format').on('keyup', function (e){
+   var nombre = ($(this).val()+"").replace(/[^0-9+\-Ee.]/g, '');//.replace(/(\d)(?=(\d\d\d)+(?!\d))/g,"");//.replace(new RegExp(separator, "g"), '')
+   $(this).val(new Intl.NumberFormat().format(nombre))
+   //$(this).val( o.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1'+separator) )
+})
+
+function formate(val){
+        
+        var reg = new RegExp("[,.]+", "g");
+              let somme = val ;//obj.fields.mt_ligne
+              let formattedDecima = 0;
+              let formattedNum = 0;
+
+                 try{
+                    let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+                    let decimal = (somme.split(reg)[1]).replace(/\s/g,"");
+                    formattedDecima = parseFloat(decimal).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    formattedNum = parseFloat(sommes).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    }
+                    catch(error){
+                                   // let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+                       formattedNum = parseFloat(somme).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+                    }
+                    return formattedNum;
+}
+   let tau=$('#id_taux').val();
+   $('#id_taux').val(formate(tau));
+   $('.format').keyup(function(e){
+     
+      var reg = new RegExp("[,.]+", "g");
+      let somme = $(this).val().toString();
+      let formattedDecima = 0;
+      let formattedNum = 0;
+      let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+      try{
+          let decimal = (somme.split(reg)[1]).replace(/\s/g,"");
+          formattedDecima = parseFloat(decimal).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+          formattedNum = parseFloat(sommes).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+      }
+      catch(error){
+          // let sommes = (somme.split(reg)[0]).replace(/\s/g,"");
+          formattedNum = parseFloat(sommes).toString().replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
+      }
+      if(!(event.keyCode === 188)){
+          if(!(isNaN(parseFloat(formattedNum.toString().replace(/\s/g,""))))){
+              if(!(isNaN(parseFloat(formattedDecima.toString().replace(/\s/g,"")))) && parseFloat(formattedDecima.toString().replace(/\s/g,"")) != 0){
+                  $(this).val(formattedNum+','+formattedDecima);
+              }else{
+                  $(this).val(formattedNum);
+              }
+          }
+      }
+    });
+</script>
+{% endblock %}
